@@ -1,0 +1,12 @@
+/Users/philliple/.ghcup/ghc/9.4.8/lib/ghc-9.4.8/lib/aarch64-osx-ghc-9.4.8/rts-1.0.2/include/ghcversion.h:
+  hash: 4bc88722407a89d1efbfa9c116cd4017af6ea3ff746643032b96cef62782f5dd
+/Users/philliple/Documents/nw-alignment/.stack-work/dist/aarch64-osx/Cabal-3.8.1.0/build/autogen/Paths_nw_alignment.hs:
+  hash: ea480384b6be3b87755205c5cb4bd1622cf313b9db48c86b255274da186e2cd6
+/Users/philliple/Documents/nw-alignment/.stack-work/dist/aarch64-osx/Cabal-3.8.1.0/build/autogen/cabal_macros.h:
+  hash: aec6d8a4ebd45e6b2d37c02a59db6e96c0c1388f9b088bb659760eb440d190d7
+/Users/philliple/Documents/nw-alignment/nw-alignment.cabal:
+  hash: 028e8cf7ebe8548ee0d253402ae57f1a7acf9cd4b51227ded474fef13e49a93a
+/Users/philliple/Documents/nw-alignment/package.yaml:
+  hash: f169bf067bb65180b23ca825e241df886bd2eb0e7bfc0af9ac50d066934bb729
+/Users/philliple/Documents/nw-alignment/src/Lib.hs:
+  hash: 0beec059d05cbadd07ded222dc383f80056497b8796ce8a2e689e305d46f9217
