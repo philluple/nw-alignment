@@ -7,7 +7,7 @@ getFiles arg =
   case arg of
     "test1" -> ("./input/human1.txt", "./input/rat1.txt")
     "test2" -> ("./input/human2.txt", "./input/rat2.txt")
-    "test3" -> ("./input/human1.txt", "./input/rat1.txt")
+    "test3" -> ("./input/human3.txt", "./input/rat3.txt")
     "test4" -> ("./input/human1.txt", "./input/rat1.txt")
     _       -> ("./input/human1.txt", "./input/rat1.txt")
 
@@ -33,6 +33,7 @@ main = do
       scoring = Scoring { matchScore = 1, mismatchPenalty = 2, gapPenalty = 1 }
       scores = needlemanWunsch scoring sequence1 sequence2
       (alignment1, alignment2) = traceback scores sequence1 sequence2
+
       outputFileSequence1 = "./output/output1.txt"
       outputFileSequence2 = "./output/output2.txt"
 
