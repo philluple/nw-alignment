@@ -1,6 +1,7 @@
 module Lib where
-import Control.Parallel.Strategies ( parMap, rpar )
-import Data.Array ( Array, (!), bounds, array )
+
+import Control.Parallel.Strategies (rpar, parMap)
+import Data.Array ( (!), bounds, listArray, Array )
 
 data Scoring = Scoring
   { matchScore :: Int
@@ -14,29 +15,28 @@ score scoring a b
   | a == b    = matchScore scoring
   | otherwise = -mismatchPenalty scoring
 
+calcuateScores :: Scoring -> [Char] -> [Char] -> Array (Int, Int) Int
+calcuateScores scoring s1 s2 =
+    let n = length s1
+        m = length s2
+        indexes = [(i, j) | i <- [0..n], j <- [0..m]]
+
+        calculateScore (i, j)
+          | i == 0    = -j * gapPenalty scoring
+          | j == 0    = -i * gapPenalty scoring
+          | otherwise = maximum
+                            [ scores ! (i-1, j-1) + score scoring (s1 !! (i-1)) (s2 !! (j-1))
+                            , scores ! (i, j-1) - gapPenalty scoring
+                            , scores ! (i-1, j) - gapPenalty scoring
+                            ]
+        scores = listArray ((0, 0), (n, m)) $ parMap rpar calculateScore indexes
+    in scores
+
+-- -- Needleman-Wunsch seq algorithm
 needlemanWunsch :: Scoring -> String -> String -> Array (Int, Int) Int
-needlemanWunsch scoring s1 s2 =
-  let n = length s1
-      m = length s2
-      -- Function to calculate score for a cell (i, j)
-      calculateScore i j
-        | i == 0 = -j * gapPenalty scoring
-        | j == 0 = -i * gapPenalty scoring
-        | otherwise = maximum
-                        [ scores ! (i-1, j-1) + score scoring (s1 !! (i-1)) (s2 !! (j-1))
-                        , scores ! (i, j-1) - gapPenalty scoring
-                        , scores ! (i-1, j) - gapPenalty scoring
-                        ]
+needlemanWunsch = calcuateScores
 
-      -- Compute rows in parallel
-      scores = array ((0, 0), (n, m)) $ do
-        let columnOp j = [((i, j), calculateScore i j) | i <- [0..n]]
-        concat $ parMap rpar columnOp [0..m]
-
-  in scores
-
-
--- -- Traceback to get the aligned sequences
+-- Traceback to get the aligned sequences
 traceback :: Array (Int, Int) Int -> String -> String -> (String, String)
 traceback scores s1 s2 = go (n, m) ("", "")
   where
@@ -50,3 +50,4 @@ traceback scores s1 s2 = go (n, m) ("", "")
         go (i, j-1) ('-' : align1, s2 !! (j-1) : align2)
       | otherwise =
         go (i-1, j-1) (s1 !! (i-1) : align1, s2 !! (j-1) : align2)
+
