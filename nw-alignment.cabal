@@ -24,7 +24,7 @@ library
     , parallel
   default-language: Haskell2010
 
-executable nw-aligner
+executable nw-alignment
   main-is: Main.hs
   other-modules:
       Paths_nw_alignment
@@ -34,6 +34,7 @@ executable nw-aligner
   build-depends:
       array
     , base >=4.7 && <5
+    , nw-alignment
     , parallel
   default-language: Haskell2010
 
@@ -44,11 +45,10 @@ test-suite nw-aligner-test
       Paths_nw_alignment
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -eventlog
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts
   build-depends:
       HUnit
     , array
     , base >=4.7 && <5
-    , nonogram-solver
     , parallel
   default-language: Haskell2010
