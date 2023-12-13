@@ -31,8 +31,6 @@ ghc-options:
 
 library:
   source-dirs: src
-  ghc-options:
-    - -eventlog
 
 executables:
   nw-alignment:

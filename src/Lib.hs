@@ -15,28 +15,48 @@ score scoring a b
   | a == b    = matchScore scoring
   | otherwise = -mismatchPenalty scoring
 
-calcuateScores scoring s1 s2 = 
-    let n = length s1
-        m = length s2
-        indices = [(i, j) | i <- [0..n], j <- [0..m]]
-
-        calculateScore (i, j)
-          | i == 0    = -j * gapPenalty scoring
-          | j == 0    = -i * gapPenalty scoring
-          | otherwise = maximum 
-                            [ scores ! (i-1, j-1) + score scoring (s1 !! (i-1)) (s2 !! (j-1))
-                            , scores ! (i, j-1) - gapPenalty scoring
-                            , scores ! (i-1, j) - gapPenalty scoring
-                            ]
-        scores = listArray ((0, 0), (n, m)) $ parMap rpar calculateScore indices
-    in scores
-
--- -- Needleman-Wunsch seq algorithm
 needlemanWunsch :: Scoring -> String -> String -> Array (Int, Int) Int
-needlemanWunsch scoring s1 s2 = 
-	calcuateScores scoring s1 s2
+needlemanWunsch scoring s1 s2 =
+  let n = length s1
+      m = length s2
 
--- Traceback to get the aligned sequences
+      -- Initialize the score matrix
+      scores = listArray ((0, 0), (n, m)) [calculateScore i j | i <- [0..n], j <- [0..m]]
+
+      calculateScore i j
+        | i == 0    = -j * gapPenalty scoring
+        | j == 0    = -i * gapPenalty scoring
+        | otherwise = maximum
+                        [ scores ! (i-1, j-1) + score scoring (s1 !! (i-1)) (s2 !! (j-1))
+                        , scores ! (i, j-1) - gapPenalty scoring
+                        , scores ! (i-1, j) - gapPenalty scoring
+                        ]
+
+  in scores
+
+-- calcuateScores :: Scoring -> [Char] -> [Char] -> Array (Int, Int) Int
+-- calcuateScores scoring s1 s2 = 
+--     let n = length s1
+--         m = length s2
+--         indices = [(i, j) | i <- [0..n], j <- [0..m]]
+
+--         calculateScore (i, j)
+--           | i == 0    = -j * gapPenalty scoring
+--           | j == 0    = -i * gapPenalty scoring
+--           | otherwise = maximum 
+--                             [ scores ! (i-1, j-1) + score scoring (s1 !! (i-1)) (s2 !! (j-1))
+--                             , scores ! (i, j-1) - gapPenalty scoring
+--                             , scores ! (i-1, j) - gapPenalty scoring
+--                             ]
+--         scores = listArray ((0, 0), (n, m)) $ parMap rpar calculateScore indices
+--     in scores
+
+-- -- -- Needleman-Wunsch seq algorithm
+-- needlemanWunsch :: Scoring -> String -> String -> Array (Int, Int) Int
+-- needlemanWunsch scoring s1 s2 = 
+-- 	calcuateScores scoring s1 s2
+
+-- -- Traceback to get the aligned sequences
 traceback :: Array (Int, Int) Int -> String -> String -> (String, String)
 traceback scores s1 s2 = go (n, m) ("", "")
   where
