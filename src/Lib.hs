@@ -1,6 +1,6 @@
 module Lib where
-import Control.Parallel.Strategies ( parMap, rseq )
-import Data.Array ( Array, listArray, (!), (//), bounds, array )
+import Control.Parallel.Strategies ( parMap, rpar )
+import Data.Array ( Array, (!), bounds, array )
 
 data Scoring = Scoring
   { matchScore :: Int
@@ -18,7 +18,6 @@ needlemanWunsch :: Scoring -> String -> String -> Array (Int, Int) Int
 needlemanWunsch scoring s1 s2 =
   let n = length s1
       m = length s2
-
       -- Function to calculate score for a cell (i, j)
       calculateScore i j
         | i == 0 = -j * gapPenalty scoring
@@ -31,8 +30,8 @@ needlemanWunsch scoring s1 s2 =
 
       -- Compute rows in parallel
       scores = array ((0, 0), (n, m)) $ do
-        let rowComputation i = [((i, j), calculateScore i j) | j <- [0..m]]
-        concat $ parMap rseq rowComputation [0..n]
+        let columnOp j = [((i, j), calculateScore i j) | i <- [0..n]]
+        concat $ parMap rpar columnOp [0..m]
 
   in scores
 
