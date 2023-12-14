@@ -17,6 +17,8 @@ maintainer:          "N/A"
 dependencies:
 - base >= 4.7 && < 5
 - parallel
+- stm >= 2.5.1.0
+- deepseq
 - array
 
 ghc-options:
