@@ -30,8 +30,8 @@ needlemanWunsch scoring s1 s2 =
 
       -- Compute rows in parallel
       scores = array ((0, 0), (n, m)) $ do
-        let columnOp j = [((i, j), calculateScore i j) | i <- [0..n]]
-        concat $ parMap rpar columnOp [0..m]
+        let diagonalOp diagonal = [((i, diagonal - i), calculateScore i (diagonal - i)) | i <- [max 0 (diagonal - m) .. min n diagonal]]
+        concat $ parMap rpar diagonalOp [0 .. (n + m - 1)]
 
   in scores
 
