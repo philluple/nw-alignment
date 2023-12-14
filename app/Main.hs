@@ -11,6 +11,7 @@ getFiles arg =
     "test4" -> ("./input/human4.txt", "./input/rat4.txt")
     _       -> ("./input/human1.txt", "./input/rat1.txt")
 
+
 main :: IO ()
 main = do
   args <- getArgs
