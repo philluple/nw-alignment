@@ -14,15 +14,15 @@ score scoring a b
   | a == b    = matchScore scoring
   | otherwise = -mismatchPenalty scoring
 
-diagonalIndices :: Int -> [(Int, Int)]
-diagonalIndices n =
-  concat [ [(i, j) | i <- [0..n], j <- [0..n], i + j == k]| k <- [0..2*(n)] ]
+antidiagonalIndices :: Int -> [(Int, Int)]
+antidiagonalIndices n =
+  concat[ [(i, k - i) | i <- [0..k], k - i < n, k - i >= 0 && i < n] | k <- [0..2*(n-1)] ]
 
 needlemanWunsch :: Scoring -> [(Int, Int)] -> String -> String -> Array (Int, Int) Int
 needlemanWunsch scoring indices s1 s2 = 
     let n = length s1
         m = length s2
-        -- indices = diagonalIndices (n)
+        indices = antidiagonalIndices (n)
 
         calculateScore (i, j)
           | i == 0    = -j * gapPenalty scoring

@@ -8,6 +8,7 @@ printScores arr = do
   let ((x1, y1), (x2, y2)) = bounds arr
   mapM_ (\i -> mapM_ (print . (arr !)) [(i, j) | j <- [y1..y2]]) [x1..x2]
 
+
 getFiles :: String -> (FilePath, FilePath)
 getFiles arg =
   case arg of
@@ -39,19 +40,22 @@ main = do
       scoring = Scoring { matchScore = 1, mismatchPenalty = 2, gapPenalty = 1 }
       n = length sequence1
       m = length sequence2
-      indexes = diagonalIndices n
+      indexes = antidiagonalIndices n
 
 
       calculateScore :: (Int, Int) -> Int
       calculateScore (i, j)
-        | i == 0    = -j * gapPenalty scoring
-        | j == 0    = -i * gapPenalty scoring
-        | otherwise = scores ! (i-1, j-1)
+        | i == 0 = -j * gapPenalty scoring
+        | j == 0 = -i * gapPenalty scoring
+        | otherwise = maximum
+                        [ scores ! (i-1, j-1) + score scoring (sequence1 !! (i-1)) (sequence2 !! (j-1))
+                        , calculateScore (i, j-1) - gapPenalty scoring
+                        , calculateScore (i-1, j) - gapPenalty scoring
+                        ]
 
       scores :: Array (Int, Int) Int
-      scores = listArray ((0, 0), (n, m)) $ parMap rpar calculateScore (diagonalIndices (n))
-
-  
-  print indexes
+      scores = listArray ((0, 0), (n-1, m-1)) $ parMap rseq calculateScore indexes
   printScores scores
+
+  print indexes
   putStrLn $ "Results have been returned"
