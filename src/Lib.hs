@@ -1,7 +1,7 @@
 module Lib where
 
 import Control.Parallel.Strategies (rpar, parMap)
-import Data.Array (listArray, Array, (!), assocs, bounds, (//), range)
+import Data.Array (listArray, Array, (!), assocs, bounds, (//), range, array)
 
 
 data Scoring = Scoring
@@ -20,9 +20,8 @@ antidiagonalIndices :: Int -> [[(Int, Int)]]
 antidiagonalIndices n =
   [ [(i, k - i) | i <- [0..k], k - i < n, k - i >= 0 && i < n] | k <- [0..2*(n-1)] ]
 
-
-needlemanWunsch :: Scoring -> String -> String -> Array (Int, Int) Int
-needlemanWunsch scoring s1 s2 =
+adiagonal :: Scoring -> String -> String -> Array (Int, Int) Int
+adiagonal scoring s1 s2 =
     let n = length s1
         m = length s2
         diagonals = antidiagonalIndices n
@@ -46,6 +45,66 @@ needlemanWunsch scoring s1 s2 =
 
     in updatedScores
 
+
+row :: Scoring -> String -> String -> Array (Int, Int) Int
+row scoring s1 s2 =
+  let n = length s1
+      m = length s2
+      -- Function to calculate score for a cell (i, j)
+      calculateScore i j
+        | i == 0 = -j * gapPenalty scoring
+        | j == 0 = -i * gapPenalty scoring
+        | otherwise = maximum
+                        [ scores ! (i-1, j-1) + score scoring (s1 !! (i-1)) (s2 !! (j-1))
+                        , scores ! (i, j-1) - gapPenalty scoring
+                        , scores ! (i-1, j) - gapPenalty scoring
+                        ]
+
+      -- Compute rows in parallel
+      scores = array ((0, 0), (n, m)) $ do
+        let row i = [((i, j), calculateScore i j) | j <- [0..m]]
+        concat $ parMap rpar row [0..m]
+
+  in scores
+
+column :: Scoring -> String -> String -> Array (Int, Int) Int
+column scoring s1 s2 =
+  let n = length s1
+      m = length s2
+      -- Function to calculate score for a cell (i, j)
+      calculateScore i j
+        | i == 0 = -j * gapPenalty scoring
+        | j == 0 = -i * gapPenalty scoring
+        | otherwise = maximum
+                        [ scores ! (i-1, j-1) + score scoring (s1 !! (i-1)) (s2 !! (j-1))
+                        , scores ! (i, j-1) - gapPenalty scoring
+                        , scores ! (i-1, j) - gapPenalty scoring
+                        ]
+
+      -- Compute rows in parallel
+      scores = array ((0, 0), (n, m)) $ do
+        let column j = [((i, j), calculateScore i j) | i <- [0..n]]
+        concat $ parMap rpar column [0..n]
+
+  in scores
+
+
+sequential :: Scoring -> String -> String -> Array (Int, Int) Int
+sequential scoring s1 s2 =
+    let n = length s1
+        m = length s2
+        indexes = [(i, j) | i <- [0..n], j <- [0..m]]
+
+        calculateScore (i, j)
+          | i == 0    = -j * gapPenalty scoring
+          | j == 0    = -i * gapPenalty scoring
+          | otherwise = maximum
+                            [ scores ! (i-1, j-1) + score scoring (s1 !! (i-1)) (s2 !! (j-1))
+                            , scores ! (i, j-1) - gapPenalty scoring
+                            , scores ! (i-1, j) - gapPenalty scoring
+                            ]
+        scores = listArray ((0, 0), (n, m)) $ map calculateScore indexes
+    in scores
 
 -- Traceback to get the aligned sequences
 traceback :: Array (Int, Int) Int -> String -> String -> (String, String)

@@ -1,7 +1,7 @@
 name:                nw-alignment
 version:             0.1.0.0
 author:              "Phillip Le, Emily Lo"
-maintainer:          "N/A"
+maintainer:          "Authords"
 
 # extra-source-files:
 
@@ -45,13 +45,4 @@ executables:
     - nw-alignment
 
 
-tests:
-  nw-aligner-test:
-    main:               Spec.hs
-    source-dirs:        test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    dependencies:
-    - HUnit
 

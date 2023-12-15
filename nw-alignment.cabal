@@ -7,7 +7,7 @@ cabal-version: 1.12
 name:           nw-alignment
 version:        0.1.0.0
 author:         Phillip Le, Emily Lo
-maintainer:     N/A
+maintainer:     Authords
 build-type:     Simple
 
 library
@@ -37,21 +37,5 @@ executable nw-alignment
     , base >=4.7 && <5
     , deepseq
     , nw-alignment
-    , parallel
-  default-language: Haskell2010
-
-test-suite nw-aligner-test
-  type: exitcode-stdio-1.0
-  main-is: Spec.hs
-  other-modules:
-      Paths_nw_alignment
-  hs-source-dirs:
-      test
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts
-  build-depends:
-      HUnit
-    , array
-    , base >=4.7 && <5
-    , deepseq
     , parallel
   default-language: Haskell2010

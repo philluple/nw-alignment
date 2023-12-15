@@ -1,46 +1,43 @@
 import Lib
-import System.Environment (getArgs)
-import Data.Array
-
-printScores :: Array (Int, Int) Int -> IO ()
-printScores arr = do
-  let ((x1, y1), (x2, y2)) = bounds arr
-  mapM_ (\i -> mapM_ (\j -> putStrLn $ "Position (" ++ show i ++ ", " ++ show j ++ "): " ++ show (arr ! (i, j))) [y1..y2]) [x1..x2]
-
-getFiles :: String -> (FilePath, FilePath)
-getFiles arg =
-  case arg of
-    "test1" -> ("./input/human1.txt", "./input/rat1.txt")
-    "test2" -> ("./input/human2.txt", "./input/rat2.txt")
-    "test3" -> ("./input/human3.txt", "./input/rat3.txt")
-    "test4" -> ("./input/human4.txt", "./input/rat4.txt")
-    _       -> ("./input/human1.txt", "./input/rat1.txt")
+import System.Environment (getArgs, getProgName)
 
 main :: IO ()
-main = do
+main = do 
   args <- getArgs
-  let (file1, file2) = case args of
-        [input] -> getFiles input
-        _       -> ("./input/human1.txt", "./input/rat1.txt")
   case args of
-    ["test1"] -> putStrLn "Running test1..."
-    ["test2"] -> putStrLn "Running test2..."
-    ["test3"] -> putStrLn "Running test3..."
-    ["test4"] -> putStrLn "Running test4..."
-    [input]   -> putStrLn $ "Running test for input: " ++ input
-    _         -> putStrLn "Invalid test case specified"
-
-  seq1 <- readFile file1
-  seq2 <- readFile file2
-
-  let sequence1 =  ' ' : seq1
-      sequence2 =  ' ' : seq2
-      scoring = Scoring { matchScore = 1, mismatchPenalty = 2, gapPenalty = 1 }
-      scores = needlemanWunsch scoring sequence1 sequence2
-      (alignment1, alignment2) = traceback scores sequence1 sequence2
-      outputFileSequence1 = "./output/output1.txt"
-      outputFileSequence2 = "./output/output2.txt"
-  
-  writeFile outputFileSequence1 alignment1
-  writeFile outputFileSequence2 alignment2
-  putStrLn $ "Results have been returned"
+    [method, filename] -> do
+      contents <- readFile filename
+      let [seq1, seq2] = map (' ' :) (lines contents)
+          schema = Scoring {matchScore = 1, mismatchPenalty = 2, gapPenalty = 1}
+      putStrLn "Starting alignment..."
+      case method of
+        "adiagonal" -> do
+          let matrix = adiagonal schema seq1 seq2
+              (alignd1, alignd2) = traceback matrix seq1 seq2
+          putStrLn "Alignment is done! Writing aligned sequences to files"
+          let outputFile = "./output/output.txt"
+          writeFile outputFile $ unlines [alignd1, alignd2]
+        "row" -> do
+          let matrix = row schema seq1 seq2
+              (alignd1, alignd2) = traceback matrix seq1 seq2
+          putStrLn "Alignment is done! Writing aligned sequences to files"
+          let outputFile = "./output/output.txt"
+          writeFile outputFile $ unlines [alignd1, alignd2]
+        "column" -> do
+          let matrix = column schema seq1 seq2
+              (alignd1, alignd2) = traceback matrix seq1 seq2
+          putStrLn "Alignment is done! Writing aligned sequences to files"
+          let outputFile = "./output/output.txt"
+          writeFile outputFile $ unlines [alignd1, alignd2]
+        "sequential" -> do
+          let matrix = sequential schema seq1 seq2
+              (alignd1, alignd2) = traceback matrix seq1 seq2
+          putStrLn "Alignment is done! Writing aligned sequences to files"
+          let outputFile = "./output/output.txt"
+          writeFile outputFile $ unlines [alignd1, alignd2]
+        _ -> do
+          putStrLn "Invalid method specified"
+          return ()
+    _ -> do 
+      name <- getProgName
+      putStrLn $ "Usage: " ++ name ++ " <method> <filename>"
