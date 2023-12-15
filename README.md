@@ -14,11 +14,11 @@ You may choose to run the following:
 Since the algorithm involved creating a matrix with bounds of the length of both strings, we were limited 
 by our silly MacBooks. Therefore, we provided three appropriate tests.
 	
- 1. 100x100.txt -> Aligning two sequences, each of length 100
+ 1. `100x100.txt` -> Aligning two sequences, each of length 100
 	
- 2. 500x500.txt -> Aligning two sequences, each of length 500
+ 2. `500x500.txt` -> Aligning two sequences, each of length 500
 	
- 3. 1000x1000.txt -> Aligning two sequences, each of length 1000
+ 3. `1000x1000.txt` -> Aligning two sequences, each of length 1000
 
 To build:
 ```
