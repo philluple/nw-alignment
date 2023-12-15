@@ -1,6 +1,6 @@
 module Lib where
 
-import Control.Parallel.Strategies (rpar, parMap, Strategy, using)
+import Control.Parallel.Strategies (rpar, parMap, Strategy, using, rseq)
 import Data.Array
 import Data.List (foldl')
 
@@ -26,17 +26,16 @@ calculateScores scoring s1 s2 =
     let n = length s1
         m = length s2
         diagonals = antidiagonalIndices n
-        scores = listArray ((0, 0), (n, m)) $ repeat 0
+        scores = listArray ((0, 0), (n, m)) $ repeat 7
 
         calculateScore :: (Int, Int) -> Int
-        calculateScore (i, j)
-          | i == 0    = -j * gapPenalty scoring
-          | j == 0    = -i * gapPenalty scoring
-          | otherwise = maximum
-                            [ scores ! (i-1, j-1) + score scoring (s1 !! (i-1)) (s2 !! (j-1))
-                            , scores ! (i, j-1) - gapPenalty scoring
-                            , scores ! (i-1, j) - gapPenalty scoring
-                            ]
+        calculateScore (i, j) 
+          | i == 0 && j == 0 = 0
+          | i == 0 && j == 3 = -j * gapPenalty scoring
+          | i == n && j == 0 = -i * gapPenalty scoring
+          | i == 0           = -j * gapPenalty scoring
+          | j == 0           = -i * gapPenalty scoring
+          | otherwise = 5
 
         -- Function to evaluate a cell in parallel using rpar
         evalCell :: (Int, Int) -> Int
@@ -47,7 +46,7 @@ calculateScores scoring s1 s2 =
         updateScores diag arr = foldl (\acc cell -> acc // [(cell, evalCell cell `using` rpar)]) arr diag
 
         -- Update scores for each diagonal using parallel strategies
-        updatedScores = foldl (\acc diag -> updateScores diag acc) scores diagonals
+        updatedScores = foldl (\acc diag -> updateScores diag acc `using` rseq) scores diagonals
 
     in updatedScores
 

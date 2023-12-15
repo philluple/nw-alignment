@@ -1,6 +1,11 @@
 import Lib
 import System.Environment (getArgs)
+import Data.Array
 
+printScores :: Array (Int, Int) Int -> IO ()
+printScores arr = do
+  let ((x1, y1), (x2, y2)) = bounds arr
+  mapM_ (\i -> mapM_ (\j -> putStrLn $ "Position (" ++ show i ++ ", " ++ show j ++ "): " ++ show (arr ! (i, j))) [y1..y2]) [x1..x2]
 
 getFiles :: String -> (FilePath, FilePath)
 getFiles arg =
@@ -28,14 +33,17 @@ main = do
   seq1 <- readFile file1
   seq2 <- readFile file2
 
-  let sequence1 = seq1
-      sequence2 = seq2
+  let sequence1 =  seq1
+      sequence2 =  seq2
       scoring = Scoring { matchScore = 1, mismatchPenalty = 2, gapPenalty = 1 }
       scores = needlemanWunsch scoring sequence1 sequence2
-      (alignment1, alignment2) = traceback scores sequence1 sequence2
-      outputFileSequence1 = "./output/output1.txt"
-      outputFileSequence2 = "./output/output2.txt"
-
-  writeFile outputFileSequence1 alignment1
-  writeFile outputFileSequence2 alignment2
-  putStrLn $ "Results have been returned"
+      -- (alignment1, alignment2) = traceback scores sequence1 sequence2
+      -- outputFileSequence1 = "./output/output1.txt"
+      -- outputFileSequence2 = "./output/output2.txt"
+  let n = length sequence1
+  let indexes  = antidiagonalIndices n
+  print indexes
+  printScores scores
+  -- writeFile outputFileSequence1 alignment1
+  -- writeFile outputFileSequence2 alignment2
+  -- putStrLn $ "Results have been returned"
