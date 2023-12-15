@@ -1,8 +1,7 @@
 module Lib where
 
-import Control.Parallel.Strategies (rpar, parMap, Strategy, using, rseq)
-import Data.Array
-import Data.List (foldl')
+import Control.Parallel.Strategies (rpar, using, parMap)
+import Data.Array ( (!), (//), bounds, listArray, Array, assocs )
 
 
 data Scoring = Scoring
@@ -21,42 +20,23 @@ antidiagonalIndices :: Int -> [[(Int, Int)]]
 antidiagonalIndices n =
   [ [(i, k - i) | i <- [0..k], k - i < n, k - i >= 0 && i < n] | k <- [0..2*(n-1)] ]
 
-calculateScores :: Scoring -> [Char] -> [Char] -> Array (Int, Int) Int
-calculateScores scoring s1 s2 = 
+needlemanWunsch :: Scoring -> String -> String -> Array (Int, Int) Int
+needlemanWunsch scoring s1 s2 =
     let n = length s1
         m = length s2
         diagonals = antidiagonalIndices n
-        scores = listArray ((0, 0), (n, m)) $ repeat 7
 
         calculateScore :: (Int, Int) -> Int
-        calculateScore (i, j) 
-          | i == 0 && j == 0 = 0
-          | i == 0 && j == 3 = -j * gapPenalty scoring
-          | i == n && j == 0 = -i * gapPenalty scoring
-          | i == 0           = -j * gapPenalty scoring
-          | j == 0           = -i * gapPenalty scoring
-          | otherwise = 5
+        calculateScore (i, j)
+          | i == 0 = -j * gapPenalty scoring
+          | j == 0 = -i * gapPenalty scoring
+          | otherwise = scores ! (i - 1, j - 1)
 
-        -- Function to evaluate a cell in parallel using rpar
-        evalCell :: (Int, Int) -> Int
-        evalCell cell = calculateScore cell
+        calcDiag :: [(Int, Int)] -> Array (Int, Int) Int
+        calcDiag diagonal = listArray ((head diagonal), (last diagonal)) $ parMap rpar calculateScore diagonal
 
-        -- Update scores for each diagonal by sparking evaluation for each cell in parallel
-        updateScores :: [(Int, Int)] -> Array (Int, Int) Int -> Array (Int, Int) Int
-        updateScores diag arr = foldl (\acc cell -> acc // [(cell, evalCell cell `using` rpar)]) arr diag
-
-        -- Update scores for each diagonal using parallel strategies
-        updatedScores = foldl (\acc diag -> updateScores diag acc `using` rseq) scores diagonals
-
-    in updatedScores
-
--- Return the Score
-
-
--- -- Needleman-Wunsch seq algorithm
-needlemanWunsch :: Scoring -> String -> String -> Array (Int, Int) Int
-needlemanWunsch scoring s1 s2 = 
-	calculateScores scoring s1 s2
+        scores = foldl (\acc row -> calcDiag row `seq` acc // assocs (calcDiag row)) (listArray ((0, 0), (n, m)) $ repeat 0) diagonals
+    in scores
 
 -- Traceback to get the aligned sequences
 traceback :: Array (Int, Int) Int -> String -> String -> (String, String)
