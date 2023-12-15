@@ -1,7 +1,7 @@
 module Lib where
 
-import Control.Parallel.Strategies (rpar, using, parMap)
-import Data.Array ( (!), (//), bounds, listArray, Array, assocs )
+import Control.Parallel.Strategies (rpar, using, rseq)
+import Data.Array (listArray, Array, '!)
 
 
 data Scoring = Scoring
@@ -32,10 +32,10 @@ needlemanWunsch scoring s1 s2 =
           | j == 0 = -i * gapPenalty scoring
           | otherwise = scores ! (i - 1, j - 1)
 
-        calcDiag :: [(Int, Int)] -> Array (Int, Int) Int
-        calcDiag diagonal = listArray ((head diagonal), (last diagonal)) $ parMap rpar calculateScore diagonal
+        calculateDiagonal :: [(Int, Int)] -> Array (Int, Int) Int
+        calculateDiagonal = listARray ((head diagonal), (last diagonal)) $ parMap rpar calculateScore diagonal
 
-        scores = foldl (\acc row -> calcDiag row `seq` acc // assocs (calcDiag row)) (listArray ((0, 0), (n, m)) $ repeat 0) diagonals
+        scores = foldl (\acc row -> calculateRow diagonal  `seq` acc // assocs (calculateDiagonal diagonal)) (listArray ((0, 0), (n, m)) $ repeat 0) diagonals
     in scores
 
 -- Traceback to get the aligned sequences
