@@ -1,7 +1,7 @@
 module Lib where
 
-import Control.Parallel.Strategies (rpar, using, rseq)
-import Data.Array (listArray, Array, '!)
+import Control.Parallel.Strategies (rpar, parMap)
+import Data.Array (listArray, Array, (!), assocs, bounds, (//), range)
 
 
 data Scoring = Scoring
@@ -20,6 +20,7 @@ antidiagonalIndices :: Int -> [[(Int, Int)]]
 antidiagonalIndices n =
   [ [(i, k - i) | i <- [0..k], k - i < n, k - i >= 0 && i < n] | k <- [0..2*(n-1)] ]
 
+
 needlemanWunsch :: Scoring -> String -> String -> Array (Int, Int) Int
 needlemanWunsch scoring s1 s2 =
     let n = length s1
@@ -30,13 +31,21 @@ needlemanWunsch scoring s1 s2 =
         calculateScore (i, j)
           | i == 0 = -j * gapPenalty scoring
           | j == 0 = -i * gapPenalty scoring
-          | otherwise = scores ! (i - 1, j - 1)
+          | otherwise = maximum
+                        [ scores ! (i-1, j-1) + score scoring (s1 !! (i-1)) (s2 !! (j-1))
+                        , scores ! (i, j-1) - gapPenalty scoring
+                        , scores ! (i-1, j) - gapPenalty scoring
+                        ]
 
-        calculateDiagonal :: [(Int, Int)] -> Array (Int, Int) Int
-        calculateDiagonal = listARray ((head diagonal), (last diagonal)) $ parMap rpar calculateScore diagonal
+        scores = listArray ((0, 0), (n-1, m-1)) $ parMap rpar calculateScore (range ((0, 0), (n-1, m-1)))
 
-        scores = foldl (\acc row -> calculateRow diagonal  `seq` acc // assocs (calculateDiagonal diagonal)) (listArray ((0, 0), (n, m)) $ repeat 0) diagonals
-    in scores
+        updateDiagonal :: Array (Int, Int) Int -> [(Int, Int)] -> Array (Int, Int) Int
+        updateDiagonal arr diag = arr // assocs (listArray (head diag, last diag) $ map (arr !) diag)
+
+        updatedScores = foldl updateDiagonal scores diagonals
+
+    in updatedScores
+
 
 -- Traceback to get the aligned sequences
 traceback :: Array (Int, Int) Int -> String -> String -> (String, String)

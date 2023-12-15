@@ -37,12 +37,10 @@ main = do
       sequence2 =  ' ' : seq2
       scoring = Scoring { matchScore = 1, mismatchPenalty = 2, gapPenalty = 1 }
       scores = needlemanWunsch scoring sequence1 sequence2
-    --   (alignment1, alignment2) = traceback scores sequence1 sequence2
-    --   outputFileSequence1 = "./output/output1.txt"
-    --   outputFileSequence2 = "./output/output2.txt"
---   let n = length sequence1
---   let indexes  = antidiagonalIndices n
-  printScores scores
-  -- writeFile outputFileSequence1 alignment1
-  -- writeFile outputFileSequence2 alignment2
-  -- putStrLn $ "Results have been returned"
+      (alignment1, alignment2) = traceback scores sequence1 sequence2
+      outputFileSequence1 = "./output/output1.txt"
+      outputFileSequence2 = "./output/output2.txt"
+  
+  writeFile outputFileSequence1 alignment1
+  writeFile outputFileSequence2 alignment2
+  putStrLn $ "Results have been returned"
