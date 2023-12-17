@@ -1,2 +1,2 @@
- --atg
- cga--
+-- ATG
+ CGA--

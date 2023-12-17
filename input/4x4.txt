@@ -1,2 +1,2 @@
-atgc
-cgat
+ATGC
+CGAT

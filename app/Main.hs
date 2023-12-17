@@ -19,12 +19,17 @@ score scoring a b
 
 type MutableArray = IORef (Array (Int, Int) Int)
 
-printImmutableArray :: Array (Int, Int) Int -> IO ()
-printImmutableArray arr = do
-  putStrLn "ran"
+printImmutableArray :: Array (Int, Int) Int -> String -> String -> IO ()
+printImmutableArray arr s1 s2 = do
   let (_, (n, m)) = bounds arr
 
+  -- Print the first row with sequence2
+  putStrLn $ "\t" ++ concatMap (\c -> c : "\t") s2
+
   forM_ [0..n] $ \i -> do
+    -- Print the first column with sequence1
+    putStr $ if i == 0 then "\t" else s1 !! (i) : "\t"
+
     forM_ [0..m] $ \j -> do
       putStr $ show (arr ! (i, j)) ++ "\t"
     putStrLn ""
@@ -48,6 +53,7 @@ antidiagonalIndices :: Int -> [[(Int, Int)]]
 antidiagonalIndices n =
   [ [(i, k - i) | i <- [0..k], k - i < n, k - i >= 0 && i < n] | k <- [0..2*(n-1)] ]
 
+
 adiagonal :: Scoring -> String -> String -> IO MutableArray
 adiagonal scoring s1 s2 = do
   let n = length s1
@@ -55,20 +61,30 @@ adiagonal scoring s1 s2 = do
   mutableArray <- initializeMutableArray n
   diagonals <- return $ antidiagonalIndices n
 
+  -- Use parMap rpar for parallelization
   forM_ diagonals $ \diag -> do
     scores <- readIORef mutableArray
-    forM_ diag $ \(i, j) -> do
-      let newScore
-            | i == 0 = -j * gapPenalty scoring
-            | j == 0 = -i * gapPenalty scoring
-            | otherwise = maximum
-                            [ scores ! (i-1, j-1) + score scoring (s1 !! (i-1)) (s2 !! (j-1))
-                            , scores ! (i, j-1) - gapPenalty scoring
-                            , scores ! (i-1, j) - gapPenalty scoring
-                            ]
+
+    -- Use parMap rpar to parallelize the calculation of new scores
+    let newScores = parMap rpar (\(i, j) -> calculateScore scoring s1 s2 i j scores) diag
+
+    -- Update the mutable array with the new scores
+    forM_ (zip diag newScores) $ \((i, j), newScore) ->
       updateMutableArray mutableArray (i, j) newScore
 
   return mutableArray
+
+
+-- Define a helper function for calculating scores in parallel
+calculateScore :: Scoring -> String -> String -> Int -> Int -> Array (Int, Int) Int -> Int
+calculateScore scoring s1 s2 i j scores
+  | i == 0 = -j * gapPenalty scoring
+  | j == 0 = -i * gapPenalty scoring
+  | otherwise = maximum
+                  [ scores ! (i-1, j-1) + score scoring (s1 !! (i)) (s2 !! (j))
+                  , scores ! (i, j-1) - gapPenalty scoring
+                  , scores ! (i-1, j) - gapPenalty scoring
+                  ]
 
   -- Update the type signature
 traceback :: MutableArray -> String -> String -> IO (String, String)
@@ -116,7 +132,7 @@ main = do
         "adiagonal" -> do
           matrix <- adiagonal schema seq1 seq2
           immutableArray <- readIORef matrix
-          printImmutableArray immutableArray
+          printImmutableArray immutableArray seq1 seq2
           (alignd1, alignd2) <- traceback matrix seq1 seq2
           putStrLn "Alignment is done! Writing aligned sequences to files"
           let outputFile = "./output/output.txt"
