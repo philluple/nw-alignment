@@ -14,7 +14,6 @@ main = do
         "adiagonal" -> do
           let matrix = adiagonal schema seq1 seq2
               (alignd1, alignd2) = traceback matrix seq1 seq2
-          putStrLn "Alignment is done! Writing aligned sequences to files"
           let outputFile = "./output/output.txt"
           writeFile outputFile $ unlines [alignd1, alignd2]
         "row" -> do
