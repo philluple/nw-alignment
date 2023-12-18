@@ -1,7 +1,7 @@
 name:                nw-alignment
 version:             0.1.0.0
 author:              "Phillip Le, Emily Lo"
-maintainer:          "Authords"
+maintainer:          "Authors"
 
 # extra-source-files:
 
@@ -19,6 +19,7 @@ dependencies:
 - parallel
 - array
 - deepseq
+- async
 
 ghc-options:
 - -Wall
