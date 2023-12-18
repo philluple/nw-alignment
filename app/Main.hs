@@ -12,8 +12,8 @@ main = do
       putStrLn "Starting alignment..."
       case method of
         "adiagonal" -> do
-          let matrix = adiagonal schema seq1 seq2
-              (alignd1, alignd2) = traceback matrix seq1 seq2
+          matrix <- adiagonal schema seq1 seq2
+          let (alignd1, alignd2) = traceback matrix seq1 seq2
           putStrLn "Alignment is done! Writing aligned sequences to files"
           let outputFile = "./output/output.txt"
           writeFile outputFile $ unlines [alignd1, alignd2]
