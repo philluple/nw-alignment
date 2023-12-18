@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 import Lib
 import System.Environment (getArgs, getProgName)
 
