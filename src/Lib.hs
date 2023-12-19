@@ -18,64 +18,84 @@ score scoring a b
   | otherwise = -mismatchPenalty scoring
 
 
-antidiagonalIndices :: Int -> [[(Int, Int)]]
-antidiagonalIndices n =
-  [ [(i, k - i) | i <- [0..k], k - i < n, k - i >= 0 && i < n] | k <- [0..2*(n-1)] ]
+-- antidiagonalIndices :: Int -> [[(Int, Int)]]
+-- antidiagonalIndices n =
+--   [ [(i, k - i) | i <- [0..k], k - i < n, k - i >= 0 && i < n] | k <- [0..2*(n-1)] ]
 
-writeIndicesToScores :: IOUArray (Int, Int) Int -> (Int, Int) -> Int -> IO ()
-writeIndicesToScores = writeArray
+-- writeIndicesToScores :: IOUArray (Int, Int) Int -> (Int, Int) -> Int -> IO ()
+-- writeIndicesToScores = writeArray
 
-calculateScoreinDiagonal :: IOUArray (Int, Int) Int -> Scoring -> Array Int Char -> Array Int Char -> Int -> Int -> IO Int
-calculateScoreinDiagonal scores scoring s1 s2 i j
-  | i == 0    = return $ -j * gapPenalty scoring
-  | j == 0    = return $ -i * gapPenalty scoring
-  | otherwise = do
-      scoreDiag <- readArray scores (i - 1, j - 1)
-      scoreUp   <- readArray scores (i - 1, j)
-      scoreLeft <- readArray scores (i, j - 1)
-      let matchOrMismatchScore = if s1 ! (i - 1) == s2 ! (j - 1)
-                                 then matchScore scoring
-                                 else -mismatchPenalty scoring
-      return $ maximum [ scoreDiag + matchOrMismatchScore
-                       , scoreUp   - gapPenalty scoring
-                       , scoreLeft - gapPenalty scoring
-                       ]
-
-
-computeDiagonal :: IOUArray (Int, Int) Int -> [(Int, Int)] -> Scoring -> Array Int Char -> Array Int Char -> IO ()
-computeDiagonal scores stripe scoring s1 s2 = do
-    let calculateAndUpdate (i, j) = do
-            calculatedScore <- calculateScoreinDiagonal scores scoring s1 s2 i j
-            writeIndicesToScores scores (i, j) calculatedScore
-    _ <- mapConcurrently calculateAndUpdate stripe
-    return ()
+-- calculateScoreinDiagonal :: IOUArray (Int, Int) Int -> Scoring -> Array Int Char -> Array Int Char -> Int -> Int -> IO Int
+-- calculateScoreinDiagonal scores scoring s1 s2 i j
+--   | i == 0    = return $ -j * gapPenalty scoring
+--   | j == 0    = return $ -i * gapPenalty scoring
+--   | otherwise = do
+--       scoreDiag <- readArray scores (i - 1, j - 1)
+--       scoreUp   <- readArray scores (i - 1, j)
+--       scoreLeft <- readArray scores (i, j - 1)
+--       let matchOrMismatchScore = if s1 ! (i - 1) == s2 ! (j - 1)
+--                                  then matchScore scoring
+--                                  else -mismatchPenalty scoring
+--       return $ maximum [ scoreDiag + matchOrMismatchScore
+--                        , scoreUp   - gapPenalty scoring
+--                        , scoreLeft - gapPenalty scoring
+--                        ]
 
 
-adiagonal :: Scoring -> String -> String -> [[Int]]
-adiagonal scoring s1 s2 = do
+-- computeDiagonal :: IOUArray (Int, Int) Int -> [(Int, Int)] -> Scoring -> Array Int Char -> Array Int Char -> IO ()
+-- computeDiagonal scores stripe scoring s1 s2 = do
+--     let calculateAndUpdate (i, j) = do
+--             calculatedScore <- calculateScoreinDiagonal scores scoring s1 s2 i j
+--             writeIndicesToScores scores (i, j) calculatedScore
+--     _ <- mapConcurrently calculateAndUpdate stripe
+--     return ()
+
+
+-- adiagonal :: Scoring -> String -> String -> [[Int]]
+-- adiagonal scoring s1 s2 = do
+--   let n = length s1
+--       numDiag = n+n-1
+--       scores = calculateDScore s1 s2 scoring numDiag
+--   return scores
+
+-- arrayOfDiagonals :: [[Int]]
+-- arrayOfDiagonals = [[0], [-1, -1]]
+
+calculateDScore :: String -> String -> [[Int]]
+calculateDScore s1 s2 
   let n = length s1
-      numDiag = n+n-1
-      scores = calculateDScore s1 s2 scoring numDiag
-  return scores
+      diag1 = [0]
+      diag2 = [-1, -1]
+      (_, finalDiag2) = foldl (\(d1, d2) i ->
+        let letterSequence1 = if i<=n
+                                then take (i) s1
+                              else if i==n+1
+                                then take (n) s1
+                                else drop (i-n+1)s1
+            letterSequence2 = if i<=n
+                                then take (i) s2
+                              else if i==n+1
+                                then take (n) s2
+                                else drop (i-n+1) s2
+            newDiag2 = calculateScore letterSequence1 letterSequence2 d1 d2 n+1
+        in (d2, newDiag2)
+      ) (diag1, diag2) [2..n+n+1]
 
-arrayOfDiagonals :: [[Int]]
-arrayOfDiagonals = [[0], [-1, -1]]
 
-calculateDScore :: String -> String -> Scoring -> [[Int]]
-calculateDScore s1 s2 scoring 
 
-pesudocode
-n = len s1
-diag1 = [0]
-diag2[-1, -1]
-for i=2 to n+n-1
-  if i<n
-    letterSequence1 = "_"+ s1 characters 0 to i
-    letterSequence2 = "_"+ s2 characters 0 to i
-  else
-    letterSequence1 = "_"+ s1 without the first (i-n-1) characters
-    letterSequence2 = "_"+ s2 without the first (i-n-1) characters
-  diag2 = calculateScore (letterSequence1, letterSequence2, diag1, diag2, i, 4)
+
+-- pesudocode
+-- n = len s1
+-- diag1 = [0]
+-- diag2[-1, -1]
+-- for i=2 to n+n-1
+--   if i<n
+--     letterSequence1 = "_"+ s1 characters 0 to i
+--     letterSequence2 = "_"+ s2 characters 0 to i
+--   else
+--     letterSequence1 = "_"+ s1 without the first (i-n-1) characters
+--     letterSequence2 = "_"+ s2 without the first (i-n-1) characters
+--   diag2 = calculateScore (letterSequence1, letterSequence2, diag1, diag2, i, 4)
   
 
 
@@ -108,19 +128,19 @@ calculateScore letterSequence1 letterSequence2 diag1 diag2 counter maxLen = newA
 
 
 
-adiagonal :: Scoring -> String -> String -> IO (Array (Int, Int) Int)
-adiagonal scoring s1 s2 = do
-    let n = length s1
-        m = length s2
-        diags = antidiagonalIndices (max n m)
-        s1Array = listArray (0, length s1 - 1) s1
-        s2Array = listArray (0, length s2 - 1) s2
+-- adiagonal :: Scoring -> String -> String -> IO (Array (Int, Int) Int)
+-- adiagonal scoring s1 s2 = do
+--     let n = length s1
+--         m = length s2
+--         diags = antidiagonalIndices (max n m)
+--         s1Array = listArray (0, length s1 - 1) s1
+--         s2Array = listArray (0, length s2 - 1) s2
 
-    scores <- newArray ((0, 0), (n - 1, m - 1)) 0 :: IO (IOUArray (Int, Int) Int)
-    mapM_ (\diag -> computeDiagonal scores diag scoring s1Array s2Array) diags
+--     scores <- newArray ((0, 0), (n - 1, m - 1)) 0 :: IO (IOUArray (Int, Int) Int)
+--     mapM_ (\diag -> computeDiagonal scores diag scoring s1Array s2Array) diags
 
-    frozenScores <- freeze scores
-    return frozenScores
+--     frozenScores <- freeze scores
+--     return frozenScores
 
 row :: Scoring -> String -> String -> Array (Int, Int) Int
 row scoring s1 s2 =
