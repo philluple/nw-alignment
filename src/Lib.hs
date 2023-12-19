@@ -17,6 +17,7 @@ score scoring a b
   | a == b    = matchScore scoring
   | otherwise = -mismatchPenalty scoring
 
+
 antidiagonalIndices :: Int -> [[(Int, Int)]]
 antidiagonalIndices n =
   [ [(i, k - i) | i <- [0..k], k - i < n, k - i >= 0 && i < n] | k <- [0..2*(n-1)] ]
@@ -48,6 +49,64 @@ computeDiagonal scores stripe scoring s1 s2 = do
             writeIndicesToScores scores (i, j) calculatedScore
     _ <- mapConcurrently calculateAndUpdate stripe
     return ()
+
+
+adiagonal :: Scoring -> String -> String -> [[Int]]
+adiagonal scoring s1 s2 = do
+  let n = length s1
+      numDiag = n+n-1
+      scores = calculateDScore s1 s2 scoring numDiag
+  return scores
+
+arrayOfDiagonals :: [[Int]]
+arrayOfDiagonals = [[0], [-1, -1]]
+
+calculateDScore :: String -> String -> Scoring -> [[Int]]
+calculateDScore s1 s2 scoring 
+
+pesudocode
+n = len s1
+diag1 = [0]
+diag2[-1, -1]
+for i=2 to n+n-1
+  if i<n
+    letterSequence1 = "_"+ s1 characters 0 to i
+    letterSequence2 = "_"+ s2 characters 0 to i
+  else
+    letterSequence1 = "_"+ s1 without the first (i-n-1) characters
+    letterSequence2 = "_"+ s2 without the first (i-n-1) characters
+  diag2 = calculateScore (letterSequence1, letterSequence2, diag1, diag2, i, 4)
+  
+
+
+
+calculateScore :: String -> String -> [Int] -> [Int] -> Int -> Int -> [Int]
+calculateScore letterSequence1 letterSequence2 diag1 diag2 counter maxLen = newArray
+  where
+    newArray = parMap rpar calculateValue indices
+
+    indices
+      | counter < maxLen = [0..counter]
+      | otherwise = [0..maxLen - (counter - maxLen)]
+
+    calculateValue i
+      | i == 0 && counter < maxLen = counter * (-2)
+      | i == counter && counter < maxLen = counter * (-2)
+      | otherwise = maximum [diag2 !! (i-1) - 2,
+                              diag1 !! (i-1) + if letterSequence1 !! (i) == letterSequence2 !! (i) then 1 else (-1),
+                              diag2 !! i - 2]
+
+
+-- calculate score method has input letterSequence1 letterSequence2 diag1 diag2 counter
+--   newArray = (len diag2 2) + 1
+--   for i in newArray
+--    if i == 0 newArray[i]=counter * -2
+--    if i==counter newArray[i]= counter *-2
+--    else newArray[i]= max(diag1[i-1]-2, diag[i]-2, 
+--                         if letterSequence1==letterSequence2 diag2[i-1]+1 else diag2[i-1]-1 )
+--   return newAeeay
+
+
 
 adiagonal :: Scoring -> String -> String -> IO (Array (Int, Int) Int)
 adiagonal scoring s1 s2 = do
