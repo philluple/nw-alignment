@@ -62,40 +62,50 @@ score scoring a b
 -- arrayOfDiagonals = [[0], [-1, -1]]
 
 calculateDScore :: String -> String -> [[Int]]
-calculateDScore s1 s2 
+calculateDScore s1 s2 =
   let n = length s1
       diag1 = [0]
       diag2 = [-1, -1]
-      (_, finalDiag2) = foldl (\(d1, d2) i ->
-        let letterSequence1 = if i<=n
-                                then take (i) s1
-                              else if i==n+1
-                                then take (n) s1
-                                else drop (i-n+1)s1
-            letterSequence2 = if i<=n
-                                then take (i) s2
-                              else if i==n+1
-                                then take (n) s2
-                                else drop (i-n+1) s2
-            newDiag2 = calculateScore letterSequence1 letterSequence2 d1 d2 n+1
-        in (d2, newDiag2)
+      initialArray = [[]]
+  in snd $ foldl (\i ->
+        let letterSequence1 = if i <= n
+                                then take i s1
+                                else if i == n + 1
+                                       then take n s1
+                                       else drop (i - n + 1) s1
+            letterSequence2 = if i <= n
+                                then take i s2
+                                else if i == n + 1
+                                       then take n s2
+                                       else drop (i - n + 1) s2
+            d1' = d2
+            d2' = calculateScore letterSequence1 letterSequence2 d1' d2 (n + 1)
+        in (d1', d2')
       ) (diag1, diag2) [2..n+n+1]
 
 
 
 
--- pesudocode
--- n = len s1
--- diag1 = [0]
--- diag2[-1, -1]
+
+
+
+-- calculateDScore :: String -> String -> [[Int]]
+-- calculateDScore s1 s2 =
+--   let n = length s1
+--       diag1 = [0]
+--       diag2 = [-1, -1]
 -- for i=2 to n+n-1
---   if i<n
---     letterSequence1 = "_"+ s1 characters 0 to i
---     letterSequence2 = "_"+ s2 characters 0 to i
---   else
---     letterSequence1 = "_"+ s1 without the first (i-n-1) characters
---     letterSequence2 = "_"+ s2 without the first (i-n-1) characters
---   diag2 = calculateScore (letterSequence1, letterSequence2, diag1, diag2, i, 4)
+--    let letterSequence1 = if i <= n
+--                                 then take i s1
+--                                 else if i == n + 1
+--                                        then take n s1
+--                                        else drop (i - n + 1) s1
+--             letterSequence2 = if i <= n
+--                                 then take i s2
+--                                 else if i == n + 1
+--                                        then take n s2
+--                                        else drop (i - n + 1) s2
+--   diag2 = calculateScore (letterSequence1, letterSequence2, diag1, diag2, i, n + 1)
   
 
 
