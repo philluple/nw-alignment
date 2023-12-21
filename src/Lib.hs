@@ -1,10 +1,9 @@
 module Lib where
 
-import Data.Array ((!), array, bounds, listArray, Array )
-import Control.Parallel.Strategies (rpar, parMap)
-import Data.Array.IO
-    ( IOUArray, MArray(newArray), writeArray, freeze, readArray )
-import Control.Concurrent.Async (mapConcurrently)
+import Control.Parallel.Strategies (using, parListChunk, rpar, parMap)
+import Data.Array (Array, (!), array, listArray, bounds)
+import qualified Data.Vector as V
+import Data.List (foldl')
 
 data Scoring = Scoring
   { matchScore :: Int
@@ -17,51 +16,72 @@ score scoring a b
   | a == b    = matchScore scoring
   | otherwise = -mismatchPenalty scoring
 
-antidiagonalIndices :: Int -> [[(Int, Int)]]
-antidiagonalIndices n =
-  [ [(i, k - i) | i <- [0..k], k - i < n, k - i >= 0 && i < n] | k <- [0..2*(n-1)] ]
+stringToVector :: String -> V.Vector Char
+stringToVector = V.fromList
 
-writeIndicesToScores :: IOUArray (Int, Int) Int -> (Int, Int) -> Int -> IO ()
-writeIndicesToScores = writeArray
+convertDiagonalsTo2DArray :: [Array Int Int] -> Array (Int, Int) Int
+convertDiagonalsTo2DArray diagonals = array size elements
+  where
+    n = length (head diagonals) - 1  
+    m = length (last diagonals) - 1  
+    size = ((0, 0), (n, m))
 
-calculateScoreinDiagonal :: IOUArray (Int, Int) Int -> Scoring -> Array Int Char -> Array Int Char -> Int -> Int -> IO Int
-calculateScoreinDiagonal scores scoring s1 s2 i j
-  | i == 0    = return $ -j * gapPenalty scoring
-  | j == 0    = return $ -i * gapPenalty scoring
-  | otherwise = do
-      scoreDiag <- readArray scores (i - 1, j - 1)
-      scoreUp   <- readArray scores (i - 1, j)
-      scoreLeft <- readArray scores (i, j - 1)
-      let matchOrMismatchScore = if s1 ! (i - 1) == s2 ! (j - 1)
-                                 then matchScore scoring
-                                 else -mismatchPenalty scoring
-      return $ maximum [ scoreDiag + matchOrMismatchScore
-                       , scoreUp   - gapPenalty scoring
-                       , scoreLeft - gapPenalty scoring
-                       ]
+    indexedDiagonal = zip [0..] (reverse diagonals)
+    elements = concatMap generateElements indexedDiagonal
+
+    generateElements (diagIndex, diagonal) =
+      let start = max 0 (diagIndex - m)  
+          end = min n diagIndex          
+          offset = diagIndex - start     
+      in [ ((i, diagIndex - i), diagonal ! (i - start + offset)) | i <- [start..end] ]
 
 
-computeDiagonal :: IOUArray (Int, Int) Int -> [(Int, Int)] -> Scoring -> Array Int Char -> Array Int Char -> IO ()
-computeDiagonal scores stripe scoring s1 s2 = do
-    let calculateAndUpdate (i, j) = do
-            calculatedScore <- calculateScoreinDiagonal scores scoring s1 s2 i j
-            writeIndicesToScores scores (i, j) calculatedScore
-    _ <- mapConcurrently calculateAndUpdate stripe
-    return ()
+antidiagonal :: String -> String -> [Array Int Int]
+antidiagonal firstStr secondStr =
+  let n = length firstStr
+      m = length secondStr
+      seq1 = stringToVector firstStr
+      seq2 = stringToVector secondStr
+      base = [array (0, 1) [(0, -1), (1, -1)], array (0, 0) [(0, 0)]]
+  in foldl' (createDiagonal seq1 seq2 n m) base [2..n+m]
 
-adiagonal :: Scoring -> String -> String -> IO (Array (Int, Int) Int)
-adiagonal scoring s1 s2 = do
-    let n = length s1
-        m = length s2
-        diags = antidiagonalIndices (max n m)
-        s1Array = listArray (0, length s1 - 1) s1
-        s2Array = listArray (0, length s2 - 1) s2
 
-    scores <- newArray ((0, 0), (n - 1, m - 1)) 0 :: IO (IOUArray (Int, Int) Int)
-    mapM_ (\diag -> computeDiagonal scores diag scoring s1Array s2Array) diags
 
-    frozenScores <- freeze scores
-    return frozenScores
+createDiagonal :: V.Vector Char -> V.Vector Char -> Int -> Int -> [Array Int Int] -> Int -> [Array Int Int]
+createDiagonal seq1 seq2 n m diagonals i = case diagonals of
+    (currentDiagonal:prevDiagonal:_) ->
+        let newDiagonal = calcForDiagonal seq1 seq2 prevDiagonal currentDiagonal i n m
+        in newDiagonal `seq` (newDiagonal : diagonals)
+    _ -> error "createDiagonal: Less than two diagonals provided"
+
+calcForDiagonal :: V.Vector Char -> V.Vector Char -> Array Int Int -> Array Int Int -> Int -> Int -> Int -> Array Int Int
+calcForDiagonal sec1 sec2 prevDiag1 prevDiag2 counter n m =
+  let indices = if counter <= m then [0..counter] else [counter - m..n]
+      chunkSize = 10
+      scoreList = map (calculateValue sec1 sec2 prevDiag1 prevDiag2 counter n m) indices `using` parListChunk chunkSize rpar
+  in listArray (0, length scoreList - 1) scoreList
+
+
+
+calculateValue :: V.Vector Char -> V.Vector Char -> Array Int Int -> Array Int Int -> Int -> Int -> Int -> Int -> Int
+calculateValue sec1 sec2 prevDiag1 prevDiag2 counter n m i =
+  let inBounds1 = i > 0 && i <= n
+      inBounds2 = counter - i > 0 && counter - i <= m
+      matchOrMismatch = if inBounds1 && inBounds2 
+                        then if (sec1 V.! (i - 1)) == (sec2 V.! (counter - i - 1))
+                            then 1 
+                            else -2
+                        else 0
+      scoreDiag = if i > 0 && i - 1 < length prevDiag2 
+                  then (prevDiag2 ! (i - 1)) + matchOrMismatch 
+                  else -1
+      scoreUp = if i < length prevDiag1 
+                then (prevDiag1 ! i) - 1 
+                else -1
+      scoreLeft = if i > 0 && i - 1 < length prevDiag1 
+                  then (prevDiag1 ! (i - 1)) - 1 
+                  else -1
+  in maximum [scoreDiag, scoreUp, scoreLeft]
 
 row :: Scoring -> String -> String -> Array (Int, Int) Int
 row scoring s1 s2 =

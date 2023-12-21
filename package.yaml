@@ -20,6 +20,7 @@ dependencies:
 - array
 - deepseq
 - async
+- vector
 
 ghc-options:
 - -Wall
